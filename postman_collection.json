@@ -1,0 +1,580 @@
+{
+  "info": {
+    "name": "AI Agent Backend API",
+    "description": "Collection complète pour tester l'API AI Agent - Traitement automatisé des documents d'identité marocains",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Vérification de l'état du service"
+      },
+      "response": []
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"full_name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Inscription d'un nouvel utilisateur"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"authToken\", jsonData.token);",
+                  "    console.log(\"Token saved:\", jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Connexion utilisateur et récupération du token JWT"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Déconnexion utilisateur"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["me"]
+            },
+            "description": "Récupération du profil utilisateur"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Nom Mis À Jour\",\n  \"phone\": \"+212600000000\",\n  \"job_title\": \"Développeur\",\n  \"department\": \"IT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["me"]
+            },
+            "description": "Mise à jour du profil utilisateur"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CIN Processing",
+      "item": [
+        {
+          "name": "Process CIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "recto",
+                  "type": "file",
+                  "description": "Image du recto de la CIN",
+                  "src": []
+                },
+                {
+                  "key": "verso",
+                  "type": "file",
+                  "description": "Image du verso de la CIN",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cin/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["cin", "process"]
+            },
+            "description": "Traitement d'une carte d'identité nationale"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All CIN",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cin/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["cin", "all"]
+            },
+            "description": "Récupération de toutes les CIN traitées"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permis Processing",
+      "item": [
+        {
+          "name": "Process Permis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "recto",
+                  "type": "file",
+                  "description": "Image du recto du permis",
+                  "src": []
+                },
+                {
+                  "key": "verso",
+                  "type": "file",
+                  "description": "Image du verso du permis (optionnel)",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/permis/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["permis", "process"]
+            },
+            "description": "Traitement d'un permis de conduire"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Permis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/permis/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["permis", "all"]
+            },
+            "description": "Récupération de tous les permis traités"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Carte Grise Processing",
+      "item": [
+        {
+          "name": "Process Carte Grise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "recto",
+                  "type": "file",
+                  "description": "Image du recto de la carte grise",
+                  "src": []
+                },
+                {
+                  "key": "verso",
+                  "type": "file",
+                  "description": "Image du verso de la carte grise",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gris/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["gris", "process"]
+            },
+            "description": "Traitement d'une carte grise"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Carte Grise",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gris/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["gris", "all"]
+            },
+            "description": "Récupération de toutes les cartes grises traitées"
+          },
+          "response": []
+        },
+        {
+          "name": "Monthly Evolution",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/gris/evolution-mensuel",
+              "host": ["{{baseUrl}}"],
+              "path": ["gris", "evolution-mensuel"]
+            },
+            "description": "Évolution mensuelle des immatriculations"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Charts",
+      "item": [
+        {
+          "name": "Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "overview"]
+            },
+            "description": "Vue d'ensemble des cartes traitées"
+          },
+          "response": []
+        },
+        {
+          "name": "Gender Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/gender-distribution",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "gender-distribution"]
+            },
+            "description": "Distribution par genre"
+          },
+          "response": []
+        },
+        {
+          "name": "Cities Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/cities-distribution",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "cities-distribution"]
+            },
+            "description": "Distribution par villes"
+          },
+          "response": []
+        },
+        {
+          "name": "License Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/license-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "license-categories"]
+            },
+            "description": "Distribution des catégories de permis"
+          },
+          "response": []
+        },
+        {
+          "name": "Car Usage Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/car-usage-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "car-usage-types"]
+            },
+            "description": "Types d'usage des véhicules"
+          },
+          "response": []
+        },
+        {
+          "name": "Monthly Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/monthly-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "monthly-stats"]
+            },
+            "description": "Statistiques mensuelles"
+          },
+          "response": []
+        },
+        {
+          "name": "Daily Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/daily-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "daily-stats"]
+            },
+            "description": "Statistiques quotidiennes"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "dashboard"]
+            },
+            "description": "Toutes les données du dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Essential Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/charts/essential",
+              "host": ["{{baseUrl}}"],
+              "path": ["charts", "essential"]
+            },
+            "description": "Données essentielles du dashboard"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Variables globales disponibles",
+          "console.log('Base URL:', pm.environment.get('baseUrl'));",
+          "console.log('Auth Token:', pm.environment.get('authToken'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tests globaux",
+          "pm.test('Response time is less than 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response format is JSON', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "testEmail",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "test123",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[2025-10-06 15:39:33,904] Abdelhafid/INFO/locust.main: Starting Locust 2.41.5
+[2025-10-06 15:39:33,906] Abdelhafid/INFO/locust.main: Starting web interface at http://0.0.0.0:8089, press enter to open your default browser.
+[2025-10-06 15:39:34,043] Abdelhafid/INFO/locust.main: Run time limit set to 300 seconds
+[2025-10-06 15:39:34,057] Abdelhafid/INFO/locust.runners: Ramping to 50 users at a rate of 2.00 per second
+[2025-10-06 15:39:58,304] Abdelhafid/INFO/locust.runners: All users spawned: {"ApiUser": 7, "AuthenticatedUser": 4, "PublicEndpointsUser": 7, "SequentialFlowUser": 4, "WebsiteUser": 28} (50 total users)
+[2025-10-06 15:44:32,832] Abdelhafid/INFO/locust.main: --run-time limit reached, stopping test
+[2025-10-06 15:44:34,346] Abdelhafid/INFO/locust.main: --autoquit time reached, shutting down
+[2025-10-06 15:44:35,927] Abdelhafid/INFO/locust.main: writing html report to file: reports/locust_report.html
+[2025-10-06 15:44:35,942] Abdelhafid/INFO/locust.main: Shutting down (exit code 1)

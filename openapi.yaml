@@ -1,0 +1,1169 @@
+openapi: 3.0.3
+info:
+  title: AI Agent API
+  description: |
+    API pour le traitement automatisé des documents d'identité, permis de conduire et cartes grises avec intelligence artificielle.
+    
+    ## Fonctionnalités
+    - Traitement OCR automatisé avec Azure Cognitive Services
+    - Extraction intelligente des données structurées
+    - Support multilingue (Français/Arabe)
+    - Analytics et rapports en temps réel
+    - Authentification JWT sécurisée
+    
+    ## Workflow Typique
+    1. **Inscription/Connexion** : Créer un compte et récupérer un token JWT
+    2. **Upload Documents** : Envoyer les images des documents (recto/verso)
+    3. **Traitement IA** : L'API extrait et structure automatiquement les données
+    4. **Récupération** : Accéder aux données structurées et aux analytics
+    
+    ## Support
+    - Documentation interactive disponible sur `/docs/`
+    - Exemples complets dans le README.md
+    - Support technique : support@ai-agent.com
+  version: 1.0.0
+  contact:
+    name: Support API AI Agent
+    email: support@ai-agent.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Serveur de développement
+  - url: https://api.ai-agent.com
+    description: Serveur de production
+
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Vérification de l'état du service
+      description: Endpoint pour vérifier que l'API fonctionne correctement
+      security: []
+      responses:
+        '200':
+          description: Service opérationnel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /auth/register:
+    post:
+      tags:
+        - Authentification
+      summary: Inscription d'un nouvel utilisateur
+      description: Créer un nouveau compte utilisateur dans le système
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Adresse email de l'utilisateur
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 6
+                  description: Mot de passe (minimum 6 caractères)
+                  example: motdepasse123
+                full_name:
+                  type: string
+                  description: Nom complet de l'utilisateur
+                  example: Jean Dupont
+      responses:
+        '201':
+          description: Utilisateur créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User registered successfully
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentification
+      summary: Connexion utilisateur
+      description: Authentifier un utilisateur et récupérer un token JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  example: motdepasse123
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT Token d'authentification
+                    example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+        '401':
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentification
+      summary: Déconnexion utilisateur
+      description: Déconnecter l'utilisateur (côté client doit supprimer le token)
+      security: []
+      responses:
+        '200':
+          description: Déconnexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out (client should discard token)
+
+  /me:
+    get:
+      tags:
+        - Profil Utilisateur
+      summary: Récupération du profil utilisateur
+      description: Obtenir les informations du profil de l'utilisateur connecté
+      responses:
+        '200':
+          description: Profil utilisateur récupéré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Profil Utilisateur
+      summary: Mise à jour du profil utilisateur
+      description: Modifier les informations du profil utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  example: Nouveau Nom
+                phone:
+                  type: string
+                  example: +212600000000
+                address:
+                  type: string
+                  example: 123 Rue Principale
+                job_title:
+                  type: string
+                  example: Développeur
+                department:
+                  type: string
+                  example: IT
+      responses:
+        '200':
+          description: Profil mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Profil mis à jour avec succès
+                  user:
+                    $ref: '#/components/schemas/UserBasic'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cin/process:
+    post:
+      tags:
+        - Carte d'Identité Nationale
+      summary: Traitement d'une CIN
+      description: |
+        Traite une carte d'identité nationale marocaine en uploadant les images recto et verso.
+        L'API utilise l'OCR Azure pour extraire le texte et l'IA pour structurer les données.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - recto
+                - verso
+              properties:
+                recto:
+                  type: string
+                  format: binary
+                  description: Image du recto de la carte (JPG, PNG, max 10MB)
+                verso:
+                  type: string
+                  format: binary
+                  description: Image du verso de la carte (JPG, PNG, max 10MB)
+      responses:
+        '200':
+          description: CIN traitée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CINData'
+        '400':
+          description: Fichiers manquants ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur de traitement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cin/all:
+    get:
+      tags:
+        - Carte d'Identité Nationale
+      summary: Récupération de toutes les CIN
+      description: Obtenir la liste de toutes les cartes d'identité traitées
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des CIN récupérée
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CINData'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /permis/process:
+    post:
+      tags:
+        - Permis de Conduire
+      summary: Traitement d'un permis de conduire
+      description: |
+        Traite un permis de conduire marocain en uploadant les images.
+        Le recto est obligatoire, le verso est optionnel selon le type de permis.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - recto
+              properties:
+                recto:
+                  type: string
+                  format: binary
+                  description: Image du recto du permis (obligatoire)
+                verso:
+                  type: string
+                  format: binary
+                  description: Image du verso du permis (optionnel)
+      responses:
+        '200':
+          description: Permis traité avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermisData'
+        '400':
+          description: Fichiers manquants ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /permis/all:
+    get:
+      tags:
+        - Permis de Conduire
+      summary: Récupération de tous les permis
+      description: Obtenir la liste de tous les permis de conduire traités
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des permis récupérée
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermisData'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /gris/process:
+    post:
+      tags:
+        - Carte Grise
+      summary: Traitement d'une carte grise
+      description: |
+        Traite une carte grise (certificat d'immatriculation) marocaine.
+        Nécessite les images recto et verso du document.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - recto
+                - verso
+              properties:
+                recto:
+                  type: string
+                  format: binary
+                  description: Image du recto de la carte grise
+                verso:
+                  type: string
+                  format: binary
+                  description: Image du verso de la carte grise
+      responses:
+        '200':
+          description: Carte grise traitée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartGrisData'
+        '400':
+          description: Fichiers manquants ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /gris/all:
+    get:
+      tags:
+        - Carte Grise
+      summary: Récupération de toutes les cartes grises
+      description: Obtenir la liste de toutes les cartes grises traitées
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Liste des cartes grises récupérée
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartGrisData'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /gris/evolution-mensuel:
+    get:
+      tags:
+        - Carte Grise
+      summary: Évolution mensuelle des immatriculations
+      description: Statistiques d'évolution mensuelle des premières immatriculations
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Données d'évolution mensuelle
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                example:
+                  "2024-01": 15
+                  "2024-02": 23
+                  "2024-03": 18
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/overview:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Vue d'ensemble des cartes
+      description: Statistiques générales sur tous les types de cartes traitées
+      responses:
+        '200':
+          description: Vue d'ensemble récupérée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartOverview'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/gender-distribution:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Distribution par genre
+      description: Répartition des utilisateurs par genre (M/F)
+      responses:
+        '200':
+          description: Distribution par genre
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenderDistribution'
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/cities-distribution:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Distribution par villes
+      description: Répartition géographique des utilisateurs par ville
+      responses:
+        '200':
+          description: Distribution par villes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: CASABLANCA
+                        count:
+                          type: integer
+                          example: 45
+                        percentage:
+                          type: number
+                          example: 25.5
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/license-categories:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Distribution des catégories de permis
+      description: Répartition des permis par catégorie (A, B, C, D, etc.)
+      responses:
+        '200':
+          description: Distribution des catégories de permis
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                example:
+                  A: 5
+                  B: 120
+                  C: 15
+                  D: 8
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/car-usage-types:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Types d'usage des véhicules
+      description: Répartition des véhicules par type d'usage
+      responses:
+        '200':
+          description: Types d'usage des véhicules
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                example:
+                  Particulier: 85
+                  Transport de marchandises: 12
+                  Transport en commun: 8
+                  Location avec chauffeur: 5
+        '401':
+          description: Non authentifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /charts/monthly-stats:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Statistiques mensuelles
+      description: Statistiques de traitement des documents par mois
+      responses:
+        '200':
+          description: Statistiques mensuelles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  months:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Jan", "Fév", "Mar", "Avr"]
+                  cin_count:
+                    type: array
+                    items:
+                      type: integer
+                    example: [45, 52, 38, 65]
+                  permis_count:
+                    type: array
+                    items:
+                      type: integer
+                    example: [23, 28, 19, 35]
+                  gris_count:
+                    type: array
+                    items:
+                      type: integer
+                    example: [15, 18, 12, 22]
+
+  /charts/daily-stats:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Statistiques quotidiennes
+      description: Statistiques de traitement des documents des 7 derniers jours
+      responses:
+        '200':
+          description: Statistiques quotidiennes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  days:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+                  total_processed:
+                    type: array
+                    items:
+                      type: integer
+                    example: [12, 8, 15, 20, 18, 5, 3]
+
+  /charts/dashboard:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Données complètes du dashboard
+      description: Récupère toutes les données nécessaires pour alimenter le dashboard
+      responses:
+        '200':
+          description: Données dashboard complètes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overview:
+                    $ref: '#/components/schemas/ChartOverview'
+                  gender_distribution:
+                    $ref: '#/components/schemas/GenderDistribution'
+                  cities_distribution:
+                    type: object
+                  license_categories:
+                    type: object
+                  car_usage_types:
+                    type: object
+                  monthly_stats:
+                    type: object
+                  daily_stats:
+                    type: object
+
+  /charts/essential:
+    get:
+      tags:
+        - Analytics & Graphiques
+      summary: Données essentielles du dashboard
+      description: Version optimisée avec seulement les données les plus fiables et importantes
+      responses:
+        '200':
+          description: Données essentielles du dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  performance:
+                    type: object
+                    properties:
+                      efficiency:
+                        type: number
+                        example: 94.5
+                      total_processed:
+                        type: integer
+                        example: 1247
+                      trend:
+                        type: string
+                        example: "↗"
+                  weekly_activity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day:
+                          type: string
+                        count:
+                          type: integer
+                  top_cities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: integer
+                  gender_stats:
+                    $ref: '#/components/schemas/GenderDistribution'
+                  vehicle_usage:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        count:
+                          type: integer
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Token obtenu via l'endpoint `/auth/login`.
+        Format: `Bearer <your_jwt_token>`
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Message d'erreur détaillé
+          example: Email and password required
+
+    LangText:
+      type: object
+      required:
+        - fr
+        - ar
+      properties:
+        fr:
+          type: string
+          description: Texte en français
+          example: DUPONT
+        ar:
+          type: string
+          description: Texte en arabe
+          example: دوبون
+
+    CINIdentite:
+      type: object
+      required:
+        - nom
+        - prenom
+      properties:
+        nom:
+          $ref: '#/components/schemas/LangText'
+        prenom:
+          $ref: '#/components/schemas/LangText'
+
+    CINNaissance:
+      type: object
+      required:
+        - date
+        - lieu
+      properties:
+        date:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date de naissance au format DD.MM.YYYY
+          example: 15.03.1990
+        lieu:
+          $ref: '#/components/schemas/LangText'
+
+    CINParent:
+      type: object
+      required:
+        - pere
+        - mere
+      properties:
+        pere:
+          $ref: '#/components/schemas/LangText'
+        mere:
+          $ref: '#/components/schemas/LangText'
+
+    CINEtatCivil:
+      type: object
+      properties:
+        numero_etat_civil:
+          type: string
+          pattern: '^\d{2,4}/\d{4}$'
+          description: Numéro d'état civil au format XX/YYYY
+          example: 123/2024
+
+    CINData:
+      type: object
+      required:
+        - cin
+        - identite
+        - naissance
+        - adresse
+        - sexe
+        - validite
+        - parents
+        - etat_civil
+      properties:
+        cin:
+          type: string
+          description: Numéro de la carte nationale
+          example: A123456
+        identite:
+          $ref: '#/components/schemas/CINIdentite'
+        naissance:
+          $ref: '#/components/schemas/CINNaissance'
+        adresse:
+          $ref: '#/components/schemas/LangText'
+        sexe:
+          type: string
+          enum: [M, F]
+          description: Sexe de la personne
+          example: M
+        validite:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date de validité au format DD.MM.YYYY
+          example: 15.03.2030
+        parents:
+          $ref: '#/components/schemas/CINParent'
+        etat_civil:
+          $ref: '#/components/schemas/CINEtatCivil'
+
+    PermisInfo:
+      type: object
+      required:
+        - numero_permis
+        - date_delivrance
+        - date_expiration
+        - categorie
+      properties:
+        numero_permis:
+          type: string
+          pattern: '^\d{1,2}/\d{6}$'
+          description: Numéro du permis au format N/MMMMMM
+          example: 55/193059
+        date_delivrance:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date de délivrance
+          example: 15.01.2020
+        date_expiration:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date d'expiration
+          example: 15.01.2030
+        categorie:
+          type: string
+          enum: [A1, A, B, C, D, E(B), E(C), E(D)]
+          description: Catégorie du permis
+          example: B
+
+    PermisData:
+      type: object
+      required:
+        - permis
+        - identite
+        - naissance
+      properties:
+        permis:
+          $ref: '#/components/schemas/PermisInfo'
+        identite:
+          $ref: '#/components/schemas/CINIdentite'
+        naissance:
+          $ref: '#/components/schemas/CINNaissance'
+
+    NumeroMatricule:
+      type: object
+      required:
+        - numero
+      properties:
+        numero:
+          type: string
+          pattern: '^\d{1,5}\s[أ-يA-Z]\s\d{2}$'
+          description: Numéro de matricule au format NNNN L NN
+          example: 1234 أ 56
+
+    ImmatriculationAnterieure:
+      type: object
+      required:
+        - numero
+      properties:
+        numero:
+          type: string
+          pattern: '^WW-\d{1,6}$'
+          description: Numéro d'immatriculation antérieure
+          example: WW-123456
+
+    DateField:
+      type: object
+      required:
+        - date
+      properties:
+        date:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date au format JJ.MM.AAAA
+          example: 15.01.2020
+
+    Usage:
+      type: object
+      required:
+        - type
+        - description
+      properties:
+        type:
+          type: string
+          enum: 
+            - Particulier
+            - Transport de marchandises
+            - Transport en commun
+            - Location avec chauffeur
+            - Location sans chauffeur
+          description: Type d'usage du véhicule
+          example: Particulier
+        description:
+          type: string
+          minLength: 3
+          description: Description de l'usage
+          example: Usage personnel
+
+    CartGrisData:
+      type: object
+      required:
+        - numero_matricule_marocain
+        - immatriculation_anterieure
+        - mise_en_circulation
+        - mise_en_circulation_au_maroc
+        - mutation
+        - usage
+        - marque
+        - Type
+        - Genre
+        - type_carburant
+        - numero_chassis
+        - nombre_cylindres
+        - puissance_fiscale
+        - restriction
+        - identite
+        - adresse
+        - valiadtion
+      properties:
+        numero_matricule_marocain:
+          $ref: '#/components/schemas/NumeroMatricule'
+        immatriculation_anterieure:
+          $ref: '#/components/schemas/ImmatriculationAnterieure'
+        mise_en_circulation:
+          $ref: '#/components/schemas/DateField'
+        mise_en_circulation_au_maroc:
+          $ref: '#/components/schemas/DateField'
+        mutation:
+          $ref: '#/components/schemas/DateField'
+        usage:
+          $ref: '#/components/schemas/Usage'
+        marque:
+          type: string
+          description: Marque du véhicule
+          example: TOYOTA
+        Type:
+          type: string
+          description: Type du véhicule
+          example: COROLLA
+        Genre:
+          type: string
+          description: Genre du véhicule
+          example: BERLINE
+        type_carburant:
+          type: string
+          description: Type de carburant
+          example: ESSENCE
+        numero_chassis:
+          type: string
+          description: Numéro de châssis
+          example: ABC123456789
+        nombre_cylindres:
+          type: integer
+          description: Nombre de cylindres
+          example: 4
+        puissance_fiscale:
+          type: integer
+          description: Puissance fiscale en CV
+          example: 8
+        restriction:
+          type: string
+          description: Restrictions éventuelles
+          example: AUCUNE
+        identite:
+          $ref: '#/components/schemas/CINIdentite'
+        adresse:
+          $ref: '#/components/schemas/LangText'
+        valiadtion:
+          type: string
+          pattern: '^\d{2}\.\d{2}\.\d{4}$'
+          description: Date de validité
+          example: 15.01.2025
+
+    ChartOverview:
+      type: object
+      properties:
+        total_cards:
+          type: integer
+          description: Nombre total de cartes traitées
+          example: 1247
+        identity_cards:
+          type: integer
+          description: Nombre de cartes d'identité
+          example: 523
+        driving_licenses:
+          type: integer
+          description: Nombre de permis de conduire
+          example: 384
+        registration_cards:
+          type: integer
+          description: Nombre de cartes grises
+          example: 340
+
+    GenderDistribution:
+      type: object
+      properties:
+        M:
+          type: integer
+          description: Nombre d'hommes
+          example: 687
+        F:
+          type: integer
+          description: Nombre de femmes
+          example: 560
+
+    UserBasic:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        full_name:
+          type: string
+          example: Jean Dupont
+        id:
+          type: integer
+          example: 123
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserBasic'
+        - type: object
+          properties:
+            phone:
+              type: string
+              example: +212600000000
+            address:
+              type: string
+              example: 123 Rue Principale
+            job_title:
+              type: string
+              example: Développeur
+            department:
+              type: string
+              example: IT
+            created_at:
+              type: string
+              format: date-time
+              example: 2024-01-15T10:30:00Z
+            last_login:
+              type: string
+              format: date-time
+              example: 2024-03-15T14:22:00Z
+            stats:
+              type: object
+              properties:
+                total_cards_processed:
+                  type: integer
+                  example: 35
+                identity_cards:
+                  type: integer
+                  example: 12
+                driving_licenses:
+                  type: integer
+                  example: 8
+                registration_cards:
+                  type: integer
+                  example: 15
+                last_activity:
+                  type: string
+                  example: Il y a 2 heures
+
+tags:
+  - name: Health
+    description: Vérification de l'état du service
+  - name: Authentification
+    description: Gestion de l'authentification et des sessions utilisateur
+  - name: Profil Utilisateur
+    description: Gestion du profil utilisateur
+  - name: Carte d'Identité Nationale
+    description: Traitement des cartes d'identité nationales marocaines
+  - name: Permis de Conduire
+    description: Traitement des permis de conduire marocains
+  - name: Carte Grise
+    description: Traitement des cartes grises (certificats d'immatriculation)
+  - name: Analytics & Graphiques
+    description: Données analytiques et statistiques pour les dashboards

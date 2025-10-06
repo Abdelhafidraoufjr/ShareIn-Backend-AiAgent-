@@ -1,0 +1,21 @@
+flask
+pytesseract
+Pillow
+python-dotenv
+openai
+pydantic>=2.0.0
+easyocr
+azure-ai-inference
+azure-ai-formrecognizer
+azure-core
+sqlalchemy
+bcrypt
+pyjwt
+types-pytz
+flask_bcrypt
+flask-cors
+pyyaml
+# Auth0 dependencies
+python-jose[cryptography]
+requests
+locust

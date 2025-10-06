@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences
+POST,/auth/register,HTTPError('400 Client Error: BAD REQUEST for url: /auth/register'),30
+POST,/auth/register,CatchResponseError('Sequential register failed: 400'),46
