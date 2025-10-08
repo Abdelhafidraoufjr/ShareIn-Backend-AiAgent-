@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# VCS
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node/Frontend noise if any
+node_modules/
+
+# Build artifacts
+build/
+dist/
+.cache/
+
+# Local data/uploads (kept but you might want to mount a volume instead)
+# Comment next line if you actually want to bake uploads into the image
+uploads/
+
+# Logs and temp
+*.log
+/tmp/

@@ -425,3 +425,33 @@ curl -X POST http://localhost:5000/cin/process \
 - ✅ APIs Analytics/Dashboard
 - ✅ Documentation Swagger complète
 - ✅ Support multilingue FR/AR
+
+## 🐳 Déploiement avec Docker
+
+### Construire l'image
+
+Depuis le dossier `ai-agents/` (contenant `requirements.txt`, `application.py`, etc.) :
+
+```powershell
+docker build -t ai-agent-backend .
+```
+
+### Lancer le conteneur
+
+```powershell
+# Créez un fichier .env avec vos variables (voir section Configuration)
+# Montez le dossier uploads pour persister les fichiers
+docker run --name ai-agent-api -p 5000:5000 `
+  --env-file .env `
+  -v ${PWD}/uploads:/app/uploads `
+  ai-agent-backend
+```
+
+L'API sera disponible sur http://localhost:5000. Les endpoints utiles :
+- Santé: http://localhost:5000/health
+- Docs: http://localhost:5000/docs
+
+### Notes Docker
+- L'image installe `tesseract-ocr` pour `pytesseract`. Pour le support FR/AR, ajoutez les paquets langue (voir commentaires dans le `Dockerfile`).
+- Le processus démarre via Gunicorn avec l'usine Flask `application:create_app()`.
+- Le dossier `uploads/` est exclu de l'image par défaut (via `.dockerignore`) — utilisez un volume pour persister.

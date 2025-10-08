@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from routes.identity_card_routes import cin_bp
 from routes.driving_license_routes import permis_bp
@@ -8,6 +8,7 @@ from auth.authentication_routes import auth_bp
 from charts.chart_routes import charts_bp
 from middlewares.decorators import token_required
 from swagger_configuration import setup_swagger
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -19,6 +20,21 @@ def create_app():
     CORS(app, 
          supports_credentials=True, resources={r"/*": {"origins": "*"}})
 
+    requests_total = Counter(
+    "requests_total", 
+    "Total HTTP requests", 
+    ["method", "endpoint"]
+)
+
+    @app.before_request
+    def before_request():
+        requests_total.labels(
+        method=request.method,
+        endpoint=request.path
+    ).inc()
+
+    
+    
     # Configuration Swagger simple
     setup_swagger(app)
 
@@ -96,8 +112,12 @@ def create_app():
     def health_check():
         return {"status": "ok"}
     
+    @app.route("/metrics")
+    def metrics():
+        return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
+    
     return app
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
