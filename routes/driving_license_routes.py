@@ -11,7 +11,7 @@ ai_service_permis = AIServicePermis()
 permis_bp = Blueprint("permis_bp", __name__)
 
 
-@permis_bp.route("/process", methods=["POST"])
+@permis_bp.route("/process", methods=["POST", "OPTIONS"])
 @token_required
 def process_permis(current_user):
     recto = request.files.get("recto")

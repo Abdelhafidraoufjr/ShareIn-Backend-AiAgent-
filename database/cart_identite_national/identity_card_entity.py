@@ -28,8 +28,12 @@ class CINDataDB(Base):
     mere_ar = Column(String)
     numero_etat_civil = Column(String)
 
-engine = create_engine(DatabaseConfig.get_db_url())
-SessionLocal = sessionmaker(bind=engine)
+# Create engine with connection pooling and SSL configuration
+engine = create_engine(
+    DatabaseConfig.get_db_url(),
+    **DatabaseConfig.get_engine_options()
+)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base.metadata.create_all(engine)
 
 

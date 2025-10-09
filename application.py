@@ -13,13 +13,14 @@ from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+CORS_ORIGIN = os.getenv("CORS_ORIGIN", "*")
+
 def create_app():
     app = Flask(__name__)
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-    CORS(app, 
-         supports_credentials=True, resources={r"/*": {"origins": "*"}})
-
+    CORS(app, resources={r"/*": {"origins": CORS_ORIGIN}})
+    
     requests_total = Counter(
     "requests_total", 
     "Total HTTP requests", 

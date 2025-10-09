@@ -30,7 +30,7 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:5000
+  - url: http://48.217.214.247:80
     description: Serveur de développement
   - url: https://api.ai-agent.com
     description: Serveur de production
