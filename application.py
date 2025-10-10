@@ -13,30 +13,45 @@ from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-CORS_ORIGIN = os.getenv("CORS_ORIGIN", "*")
+CORS_ORIGIN = os.getenv("CORS_ORIGIN", "https://share-in-frontend-ai-agent.vercel.app")
 
 def create_app():
     app = Flask(__name__)
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-    CORS(app, resources={r"/*": {"origins": CORS_ORIGIN}})
+    # Configuration CORS complète pour Railway → Vercel
+    CORS(app, resources={r"/*": {
+        "origins": CORS_ORIGIN,
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 3600
+    }})
     
     requests_total = Counter(
-    "requests_total", 
-    "Total HTTP requests", 
-    ["method", "endpoint"]
-)
+        "requests_total", 
+        "Total HTTP requests", 
+        ["method", "endpoint"]
+    )
 
     @app.before_request
     def before_request():
+        # Gérer les requêtes OPTIONS (preflight)
+        if request.method == 'OPTIONS':
+            response = jsonify({'status': 'ok'})
+            response.headers.add('Access-Control-Allow-Origin', CORS_ORIGIN)
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept')
+            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            response.headers.add('Access-Control-Max-Age', '3600')
+            return response, 200
+        
         requests_total.labels(
-        method=request.method,
-        endpoint=request.path
-    ).inc()
+            method=request.method,
+            endpoint=request.path
+        ).inc()
 
     
-    
-    # Configuration Swagger simple
     setup_swagger(app)
 
     app.register_blueprint(cin_bp, url_prefix="/cin")
@@ -49,15 +64,13 @@ def create_app():
     @app.route("/me")
     @token_required
     def profile(current_user):
-        # Informations utilisateur de base
         user_data = {
             "email": current_user.email, 
             "full_name": current_user.full_name,
             "id": current_user.id
         }
         
-        # Ajouter des statistiques d'activité (exemples statiques pour la démo)
-        # Dans un vrai projet, ces données viendraient de la base de données
+
         user_data.update({
             "phone": getattr(current_user, 'phone', None),
             "address": getattr(current_user, 'address', None),
@@ -83,20 +96,14 @@ def create_app():
         
         data = request.get_json()
         
-        # Validation des données
         if not data:
             return jsonify({"error": "Aucune donnée fournie"}), 400
         
-        # Mise à jour des champs autorisés
         if 'full_name' in data:
             current_user.full_name = data['full_name']
-        
-        # Pour l'instant, on simule la mise à jour des autres champs
-        # Dans un vrai projet, il faudrait ajouter ces colonnes à la base de données
+
         
         try:
-            # Sauvegarder en base (simulation)
-            # session.commit()
             
             return jsonify({
                 "message": "Profil mis à jour avec succès",
